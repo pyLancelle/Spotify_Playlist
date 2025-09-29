@@ -1,0 +1,16 @@
+# Spotify Podcast Episode Filter Configuration
+# Define multiple filter configurations - each will run independently
+
+filters:
+  # Example 1: Morning interviews from Show A
+  - name: "Show A Interviews"
+    show_id: "https://open.spotify.com/show/3ixMUAbmKEYcoRt62l48Zp?si=099ec8d6efbe45f7"  # Show ID or URL
+    name_patterns:
+      - ".*C'était pas dans l'After.*"
+    target_playlist_id: "6ZHCIXubRqfGACYZRICks5"
+    max_episodes: 500
+
+# Global settings (optional)
+global:
+  # Set to true to run all filters even if one fails
+  continue_on_error: true

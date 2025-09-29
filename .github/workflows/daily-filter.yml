@@ -1,0 +1,59 @@
+name: Daily Podcast Filter
+
+on:
+  schedule:
+    # Runs at 6:00 AM Paris time (5:00 AM UTC in winter, 4:00 AM UTC in summer)
+    # Using 5:00 AM UTC as a compromise
+    - cron: '0 5 * * *'
+  workflow_dispatch:  # Allows manual trigger from GitHub UI
+
+jobs:
+  filter-episodes:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+
+    - name: Install dependencies
+      run: |
+        pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Create .env file
+      run: |
+        echo "SPOTIFY_CLIENT_ID=${{ secrets.SPOTIFY_CLIENT_ID }}" >> .env
+        echo "SPOTIFY_CLIENT_SECRET=${{ secrets.SPOTIFY_CLIENT_SECRET }}" >> .env
+        echo "SPOTIFY_REDIRECT_URI=${{ secrets.SPOTIFY_REDIRECT_URI }}" >> .env
+
+    - name: Create Spotify cache with refresh token
+      run: |
+        mkdir -p .
+        cat > .cache << EOF
+        {
+          "access_token": "dummy",
+          "token_type": "Bearer",
+          "expires_in": 3600,
+          "refresh_token": "${{ secrets.SPOTIFY_REFRESH_TOKEN }}",
+          "scope": "playlist-modify-public playlist-modify-private playlist-read-private",
+          "expires_at": 0
+        }
+        EOF
+
+    - name: Run podcast filter
+      run: python podcast_filter.py
+
+    - name: Upload logs (on failure)
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: error-logs
+        path: |
+          *.log
+        retention-days: 7
