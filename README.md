@@ -42,59 +42,67 @@ If you follow a radio station or podcast that publishes many episodes daily (e.g
 
 ## Configuration
 
-Edit `config.yaml` to customize your filtering:
+Edit `config.yaml` to define multiple filter configurations. Each filter can monitor a different show with its own patterns and target playlist.
 
-### 1. Shows to Query
+### Configuration Structure
 
-Add Spotify show IDs or URLs to monitor:
 ```yaml
-shows_to_query:
-  - "6z4NLXyHPga1UmSJsPK7G1"  # Can use show ID
-  - "https://open.spotify.com/show/7rSVyEKZ7nNJaOCCnGPFHq"  # Or full URL
+filters:
+  # Filter 1: Example configuration
+  - name: "Interview Episodes"
+    show_id: "6z4NLXyHPga1UmSJsPK7G1"  # Show ID or full URL
+    name_patterns:
+      - ".*Interview.*"
+      - ".*Entretien.*"
+    exclude_patterns:  # Optional: exclude even if it matches name_patterns
+      - ".*replay.*"
+      - ".*rediffusion.*"
+    target_playlist_id: "your_playlist_id_1"
+    max_episodes: 50
+
+  # Filter 2: Another configuration
+  - name: "Special Reports"
+    show_id: "https://open.spotify.com/show/7rSVyEKZ7nNJaOCCnGPFHq"
+    name_patterns:
+      - ".*Special.*"
+      - ".*Report.*"
+    exclude_patterns:
+      - ".*best of.*"
+    target_playlist_id: "your_playlist_id_2"
+    max_episodes: 100
+
+# Global settings
+global:
+  continue_on_error: true  # Keep processing other filters if one fails
 ```
 
-**How to get a show ID:**
-- Open Spotify and navigate to the podcast show
-- Click "Share" → "Copy link to show"
-- Paste the URL in config.yaml (or extract the ID after `/show/`)
+### Configuration Fields
 
-### 2. Name Patterns
+**`name`** (string): Descriptive name for this filter configuration
 
-Define regex patterns to match episode names:
-```yaml
-name_patterns:
-  - ".*Interview.*"           # Matches any episode with "Interview"
-  - "^Morning Show.*"          # Matches episodes starting with "Morning Show"
-  - ".*(Special|Guest).*"      # Matches episodes containing "Special" OR "Guest"
-  - "Episode [0-9]+"           # Matches "Episode" followed by numbers
-```
+**`show_id`** (string): Spotify show ID or full URL
+- Get it by: Spotify → Podcast → Share → Copy link to show
 
-**Pattern Tips:**
-- `.*` = match any characters
-- `^` = start of string
-- `$` = end of string
-- `(A|B)` = match A or B
-- `[0-9]+` = one or more digits
+**`name_patterns`** (list): Regex patterns to match episode names
+- Episodes matching ANY pattern will be considered
 - Patterns are case-insensitive
+- Pattern tips:
+  - `.*` = match any characters
+  - `^` = start of string
+  - `$` = end of string
+  - `(A|B)` = match A or B
+  - `[0-9]+` = one or more digits
 
-### 3. Target Playlist
+**`exclude_patterns`** (list, optional): Regex patterns to exclude episodes
+- Episodes matching ANY exclude pattern will be skipped, even if they match `name_patterns`
+- Useful for filtering out replays, best-of compilations, etc.
+- Same pattern syntax as `name_patterns`
 
-Specify where matching episodes should be added:
-```yaml
-target_playlist_id: "your_playlist_id_here"
-```
+**`target_playlist_id`** (string): Playlist ID where matching episodes will be added
+- Get it by: Spotify → Playlist → Share → Copy link to playlist
+- Extract ID from URL: `https://open.spotify.com/playlist/YOUR_PLAYLIST_ID`
 
-**How to get a playlist ID:**
-- Open Spotify and navigate to your playlist
-- Click "Share" → "Copy link to playlist"
-- Extract the ID from the URL: `https://open.spotify.com/playlist/YOUR_PLAYLIST_ID`
-
-### 4. Max Episodes Per Show
-
-Control how many recent episodes to check:
-```yaml
-max_episodes_per_show: 50  # Default: 50
-```
+**`max_episodes`** (integer): Number of recent episodes to check (no limit, uses pagination)
 
 ## Usage
 
@@ -130,20 +138,36 @@ The script will:
 ```
 ✓ Authenticated with Spotify
 
-→ Checking existing episodes in playlist...
-  Found 15 episodes already in playlist
+→ Found 2 filter configuration(s)
 
-→ Processing show: Example Radio Station
-  Checking 50 recent episodes...
+============================================================
+Processing filter: Interview Episodes
+============================================================
+→ Show: Example Radio Station
+→ Playlist has 15 episodes
+→ Checking 50 most recent episodes...
   ✓ Match: Morning Show - Interview with Jane Doe
   ✓ Match: Special Report: Breaking News
-  → Added 2 episodes to playlist
 
-==================================================
-Summary:
-  Total matching episodes found: 2
-  Episodes added to playlist: 2
-==================================================
+→ Added 2 episodes to playlist
+
+============================================================
+Processing filter: Special Reports
+============================================================
+→ Show: News Network Daily
+→ Playlist has 8 episodes
+→ Checking 100 most recent episodes...
+  ✓ Match: Special Edition: Election Night
+
+→ Added 1 episodes to playlist
+
+============================================================
+GLOBAL SUMMARY
+============================================================
+  Filters processed: 2/2
+  Total matching episodes found: 3
+  Total episodes added: 3
+============================================================
 ```
 
 ## Automation
@@ -211,7 +235,7 @@ Add a line to run every hour:
 
 - Verify show IDs are correct (test by opening in Spotify)
 - Check that your regex patterns are valid
-- Increase `max_episodes_per_show` if needed
+- Increase `max_episodes` in your filter configuration if needed
 
 ### Permission Errors
 
@@ -222,13 +246,17 @@ Add a line to run every hour:
 
 ```
 .
-├── .env.example           # Template for credentials
-├── .gitignore            # Git ignore file
-├── README.md             # This file
-├── requirements.txt      # Python dependencies
-├── config.yaml           # User configuration
-├── auth_setup.py         # First-time authentication helper
-└── podcast_filter.py     # Main filtering script
+├── .github/
+│   └── workflows/
+│       └── daily-filter.yml   # GitHub Actions workflow
+├── .env.example               # Template for credentials
+├── .gitignore                 # Git ignore file
+├── README.md                  # This file
+├── requirements.txt           # Python dependencies
+├── config.yaml                # Multi-filter configuration
+├── auth_setup.py              # First-time authentication helper
+├── get_refresh_token.py       # Extract token for GitHub Actions
+└── podcast_filter.py          # Main filtering script
 ```
 
 ## License

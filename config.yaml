@@ -2,15 +2,44 @@
 # Define multiple filter configurations - each will run independently
 
 filters:
-  # Example 1: Morning interviews from Show A
-  - name: "Show A Interviews"
+  - name: "C'était pas dans l'After"
     show_id: "https://open.spotify.com/show/3ixMUAbmKEYcoRt62l48Zp?si=099ec8d6efbe45f7"  # Show ID or URL
     name_patterns:
       - ".*C'était pas dans l'After.*"
+    exclude_patterns:  # Optional: patterns to exclude
+      # - ".*replay.*"
+      # - ".*rediffusion.*"
     target_playlist_id: "6ZHCIXubRqfGACYZRICks5"
-    max_episodes: 500
+    max_episodes: 50
+
+  - name: "Intégrales"
+    show_id: "https://open.spotify.com/show/3ixMUAbmKEYcoRt62l48Zp?si=099ec8d6efbe45f7"  # Show ID or URL
+    name_patterns:
+      - ".*intégrale.*"
+    exclude_patterns:
+      # - ".*example.*"
+    target_playlist_id: "2GDG0eRSkjeMJvXfP7umbe"
+    max_episodes: 50
+
+  - name: "Les Sagas musicales"
+    show_id: "https://open.spotify.com/show/7rU3c1DLUUJzZ2KkZ5cM3p?si=5220c6f8843a4551"  # Show ID or URL
+    name_patterns:
+      - ".*Mozart.*"
+      - ".*Bach.*"
+      - ".*Beethoven.*"
+      - ".*Ravel.*"
+      - ".*Debussy.*"
+      - ".*Satie.*"
+    exclude_patterns:
+      - ".*Bande Annonce.*"
+    target_playlist_id: "4O3Ttvz4XLxVQrkyVB2sFD"
+    max_episodes: 10
 
 # Global settings (optional)
 global:
   # Set to true to run all filters even if one fails
   continue_on_error: true
+
+
+
+

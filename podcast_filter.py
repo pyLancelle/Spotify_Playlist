@@ -108,6 +108,7 @@ def process_filter(sp, filter_config):
     filter_name = filter_config.get('name', 'Unnamed filter')
     show_id = extract_show_id(filter_config.get('show_id', ''))
     patterns = filter_config.get('name_patterns', [])
+    exclude_patterns = filter_config.get('exclude_patterns', [])
     playlist_id = extract_playlist_id(filter_config.get('target_playlist_id', ''))
     max_episodes = filter_config.get('max_episodes', 50)
 
@@ -150,6 +151,10 @@ def process_filter(sp, filter_config):
     found_count = 0
 
     for episode in episodes:
+        # Skip episodes with missing data
+        if not episode or not episode.get('name') or not episode.get('uri'):
+            continue
+
         episode_name = episode['name']
         episode_uri = episode['uri']
 
@@ -157,11 +162,19 @@ def process_filter(sp, filter_config):
         if episode_uri in existing_episodes:
             continue
 
-        # Check if matches any pattern
-        if matches_patterns(episode_name, patterns):
-            matching_episodes.append(episode_uri)
-            found_count += 1
-            print(f"  ✓ Match: {episode_name}")
+        # Check if matches any include pattern
+        if not matches_patterns(episode_name, patterns):
+            continue
+
+        # Check if matches any exclude pattern
+        if exclude_patterns and matches_patterns(episode_name, exclude_patterns):
+            print(f"  ✗ Excluded: {episode_name}")
+            continue
+
+        # Episode matches include patterns and doesn't match exclude patterns
+        matching_episodes.append(episode_uri)
+        found_count += 1
+        print(f"  ✓ Match: {episode_name}")
 
     # Add matching episodes to playlist
     added_count = 0
