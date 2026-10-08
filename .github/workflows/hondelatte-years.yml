@@ -1,0 +1,53 @@
+name: Hondelatte — une playlist par année
+
+on:
+  schedule:
+    - cron: '30 5 * * *'
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: Créer et mettre à jour les playlists
+        type: boolean
+        default: false
+      year:
+        description: Année racontée (vide pour toutes)
+        type: string
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: hondelatte-years
+  cancel-in-progress: false
+
+jobs:
+  synchronize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      SPOTIFY_CLIENT_ID: ${{ secrets.SPOTIFY_CLIENT_ID }}
+      SPOTIFY_CLIENT_SECRET: ${{ secrets.SPOTIFY_CLIENT_SECRET }}
+      SPOTIFY_REFRESH_TOKEN: ${{ secrets.SPOTIFY_REFRESH_TOKEN }}
+      SPOTIFY_REDIRECT_URI: ${{ secrets.SPOTIFY_REDIRECT_URI }}
+      HONDELATTE_SHOW_ID: ${{ vars.HONDELATTE_SHOW_ID }}
+      APPLY: ${{ github.event_name == 'schedule' || inputs.apply }}
+      YEAR: ${{ inputs.year }}
+      LEGACY_API: ${{ vars.SPOTIFY_LEGACY_API }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Vérifier le flux
+        run: python -m unittest discover -s tests -v
+      - name: Synchroniser les années
+        shell: bash
+        run: |
+          args=()
+          if [[ "$APPLY" == "true" ]]; then args+=(--apply); fi
+          if [[ -n "$YEAR" ]]; then args+=(--year "$YEAR"); fi
+          if [[ "$LEGACY_API" == "true" ]]; then args+=(--legacy-api); fi
+          python hondelatte_years.py "${args[@]}"

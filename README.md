@@ -1,5 +1,73 @@
 # Spotify Podcast Episode Filter
 
+## Hondelatte Raconte : une playlist par année
+
+Le flux `Hondelatte — une playlist par année` crée des playlists telles que
+**Hondelatte Raconte — L’année 1978**, avec les parties 1/5, 2/5, etc. dans l'ordre.
+Il parcourt **tout le catalogue accessible sur Spotify**, pas seulement les derniers
+épisodes. L'année vient du titre du récit, pas de sa date de publication.
+
+- Les nouvelles playlists sont **privées** par défaut.
+- Une seule version par numéro de partie : la publication disponible la plus récente.
+- Les bandes-annonces, extraits, bonus et épisodes hors série annuelle sont exclus.
+- Une série incomplète produit une playlist des parties disponibles et un avertissement.
+- Les relances réutilisent les playlists créées par ce flux et les remettent dans l'ordre,
+  y compris si une partie arrive tardivement. Une playlist déjà à jour ne reçoit aucune écriture.
+- Seules les playlists portant le marqueur `hondelatte-years` créé par le flux sont gérées.
+  Leur contenu est synchronisé : ne pas y ajouter manuellement d'autres épisodes et ne pas
+  retirer le marqueur de leur description. Les autres playlists ne sont pas modifiées.
+- Les épisodes retirés du catalogue Spotify ou indisponibles pour le compte ne peuvent
+  pas être récupérés. Une erreur de lecture du catalogue arrête le flux avant toute écriture.
+
+### Activation dans GitHub Actions
+
+1. Configurer ou réutiliser les secrets Actions `SPOTIFY_CLIENT_ID`,
+   `SPOTIFY_CLIENT_SECRET` et `SPOTIFY_REFRESH_TOKEN` du compte qui recevra les playlists.
+   Le token doit autoriser `playlist-read-private`, `playlist-modify-private` et
+   `playlist-modify-public` (les mêmes droits que le filtre existant).
+2. Dans **Actions → Hondelatte — une playlist par année → Run workflow**, laisser
+   **Créer et mettre à jour les playlists** décoché pour examiner une simulation.
+   Le champ année est facultatif (par exemple `1978`).
+3. Relancer avec la case cochée pour créer les playlists. Une fois le workflow présent
+   sur la branche par défaut, la synchronisation automatique tourne chaque jour à
+   **05:30 UTC** (07:30 à Paris en été, 06:30 en hiver).
+
+Le podcast est découvert automatiquement par son nom exact sur Spotify. Si la
+recherche est ambiguë, définir la variable Actions **`HONDELATTE_SHOW_ID`** avec le
+lien du podcast **Hondelatte Raconte** (pas Côté B). Cette variable permet aussi d'éviter
+la recherche à chaque exécution.
+
+Le nouveau flux utilise les endpoints `/items` et `/me/playlists` documentés en 2026.
+Si votre application Spotify fonctionne encore avec les anciens endpoints, définir
+la variable Actions **`SPOTIFY_LEGACY_API=true`**. Les filtres existants restent indépendants.
+L'accès réel dépend des droits et du mode de l'application Spotify ; le propriétaire
+d'une application en mode développement doit avoir Premium.
+Voir la [documentation Spotify](https://developer.spotify.com/documentation/web-api/concepts/quota-modes)
+et le [guide de migration](https://developer.spotify.com/documentation/web-api/tutorials/february-2026-migration-guide).
+
+### Exécution locale
+
+Après installation des dépendances et configuration de `.env` :
+
+```bash
+# Autoriser Spotify si nécessaire (ou définir SPOTIFY_REFRESH_TOKEN dans .env).
+python auth_setup.py
+# Simulation, aucune modification sur Spotify.
+python hondelatte_years.py
+# Créer et synchroniser toutes les années.
+python hondelatte_years.py --apply
+# Une année seulement, avec le lien du podcast si nécessaire.
+python hondelatte_years.py --year 1978 --show https://open.spotify.com/show/ID --apply
+# Tests sans connexion ni identifiants Spotify.
+python -m unittest discover -s tests -v
+```
+
+Pour une nouvelle autorisation, utiliser **`http://127.0.0.1:8888/callback`** comme
+`SPOTIFY_REDIRECT_URI` dans `.env` et dans les Redirect URIs de l'application Spotify
+(les anciens URI `localhost` ne sont plus acceptés pour une nouvelle configuration).
+L'option `--public` rend publiques les nouvelles playlists ; `--legacy-api` sélectionne
+les anciens endpoints en exécution locale.
+
 Automatically filter and add podcast episodes matching specific name patterns to a Spotify playlist. Perfect for high-volume podcast shows where you only want episodes matching certain keywords or patterns.
 
 ## Use Case
