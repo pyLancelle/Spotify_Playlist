@@ -1,6 +1,12 @@
 name: Hondelatte — une playlist par année
 
 on:
+  pull_request:
+    paths:
+      - hondelatte_years.py
+      - tests/**
+      - requirements.txt
+      - .github/workflows/hondelatte-years.yml
   schedule:
     - cron: '30 5 * * *'
   workflow_dispatch:
